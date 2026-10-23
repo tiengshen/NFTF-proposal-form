@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Client Information Form</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#1c2430;--mut:#5d6b7c;--line:#d9e0e8;--brand:#b3202a;--brand2:#8d1820;--ok:#1f7a4d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC","PingFang SC",sans-serif;padding-bottom:90px}
+header{background:var(--brand);color:#fff;padding:14px 16px 12px}
+header h1{margin:0;font-size:18px}
+header p{margin:2px 0 0;font-size:12.5px;opacity:.92}
+.bar{height:5px;background:#e6c4c7}.bar i{display:block;height:100%;background:#fff;width:0;transition:width .25s}
+main{max-width:720px;margin:0 auto;padding:14px 14px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+h2{font-size:18px;margin:0 0 4px}
+h3{font-size:15px;margin:16px 0 8px;padding-top:10px;border-top:1px solid var(--line);color:var(--brand2)}
+h3:first-of-type{border-top:0;padding-top:0;margin-top:8px}
+.zh{display:block;color:var(--mut);font-size:12.5px;font-weight:400}
+.note{background:#fff7e0;border:1px solid #f0dc9a;border-radius:8px;padding:9px 11px;font-size:13.5px;margin:8px 0}
+label.f{display:block;margin:10px 0 0;font-weight:600;font-size:14px}
+input[type=text],input[type=email],input[type=tel],input[type=number],input[type=date],select,textarea{width:100%;margin-top:4px;padding:11px 10px;border:1px solid #c3ccd6;border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+input[readonly]{background:#eef1f4}
+textarea{min-height:64px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+@media(max-width:420px){.grid{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chips label{margin:0;font-weight:500;cursor:pointer}
+.chips input{position:absolute;opacity:0;pointer-events:none}
+.chips span{display:inline-block;padding:8px 14px;border:1.5px solid #c3ccd6;border-radius:999px;font-size:14px;background:#fff}
+.chips input:checked+span{background:var(--brand);border-color:var(--brand);color:#fff}
+.chips input[value=No]:checked+span{background:var(--ok);border-color:var(--ok)}
+.q{padding:12px 0;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0}
+.qt{font-size:14.5px;font-weight:600}
+.row{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
+.who{min-width:64px;font-size:12.5px;color:var(--mut);font-weight:700}
+.det{margin-top:6px}
+.chk{display:flex;gap:10px;align-items:flex-start;margin:10px 0;font-size:14px;font-weight:500}
+.chk input{margin-top:4px;width:20px;height:20px;flex:none}
+.sigbox{border:1.5px dashed #8896a6;border-radius:10px;background:#fff;touch-action:none;width:100%;height:170px;display:block}
+.btn{border:0;border-radius:10px;padding:12px 18px;font:inherit;font-weight:700;cursor:pointer}
+.btn.p{background:var(--brand);color:#fff}.btn.s{background:#e8edf2;color:var(--ink)}
+.nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:space-between;z-index:5}
+.nav .btn{flex:1}
+.small{font-size:12.5px;color:var(--mut)}
+.who2{display:inline-block;background:#eef1f4;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;color:var(--brand2);margin-bottom:4px}
+.ok{color:var(--ok);font-weight:700}
+.opt{display:block;margin:10px 0;cursor:pointer}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt>span{display:block;border:1.5px solid #c3ccd6;border-radius:12px;padding:12px 14px;background:#fff}
+.opt input:checked+span{border-color:var(--brand);background:#fdf1f2;box-shadow:0 0 0 1px var(--brand)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Client Information Form · 客户资料表</h1>
+  <p>Hiew Tieng Shen 丘廷升 · Life Insurance Advisor 人寿保险顾问 · Great Eastern Life Assurance (Malaysia) Berhad</p>
+</header>
+<div class="bar"><i id="prog"></i></div>
+<main id="app"></main>
+<div class="nav"><button class="btn s" id="back">← Back 返回</button><button class="btn p" id="next">Next 下一步 →</button></div>
+
+<script>
+/* ---------- state ---------- */
+var ADVISOR_WA='60163388362'; /* advisor WhatsApp number, digits only with country code, e.g. 60123456789 */
+var KEY='clientinfo_v1';
+var S={};
+try{S=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){S={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var REG=[];
+var M_SELF='Buying for myself',M_PREN='Prenatal – I am the expecting mother, buying for my unborn baby',M_OTHER='Buying for my child (17 and below) or my spouse';
+if(!S.mode&&S.hasB)S.mode=M_OTHER;
+function isPren(){return S.mode===M_PREN}
+function isOther(){return S.mode===M_OTHER}
+function isSelf(){return !isPren()&&!isOther()}
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var L=function(en,zh){return esc(en)+(zh?'<small class="zh">'+esc(zh)+'</small>':'')};
+function sec(t,zh){REG.push({h:t});return '<h3>'+L(t,zh)+'</h3>'}
+function inp(n,en,zh,type,ph,rr){REG.push({n:n,l:en});return '<label class="f">'+L(en,zh)+'<input data-n="'+n+'" type="'+(type||'text')+'" value="'+esc(S[n])+'" placeholder="'+esc(ph||'')+'"'+(rr?' data-rr="1"':'')+'></label>'}
+function sel(n,en,zh,opts,rr){REG.push({n:n,l:en});var o='<option value="">— select 选择 —</option>'+opts.map(function(x){return '<option'+(S[n]===x?' selected':'')+'>'+esc(x)+'</option>'}).join('');return '<label class="f">'+L(en,zh)+'<select data-n="'+n+'"'+(rr?' data-rr="1"':'')+'>'+o+'</select></label>'}
+function rad(n,en,zh,opts,rr){REG.push({n:n,l:en});return '<div class="f" style="margin-top:10px"><b style="font-size:14px">'+L(en,zh)+'</b><div class="chips">'+opts.map(function(x){return '<label><input type="radio" name="'+n+'" data-n="'+n+'" value="'+esc(x)+'"'+(S[n]===x?' checked':'')+(rr?' data-rr="1"':'')+'><span>'+esc(x)+'</span></label>'}).join('')+'</div></div>'}
+function chk(n,en,zh,rr){REG.push({n:n,l:en,c:1});return '<label class="chk"><input type="checkbox" data-n="'+n+'"'+(S[n]?' checked':'')+(rr?' data-rr="1"':'')+'><span>'+L(en,zh)+'</span></label>'}
+function txt(n,en,zh,ph){REG.push({n:n,l:en});return '<label class="f">'+L(en,zh)+'<textarea data-n="'+n+'" placeholder="'+esc(ph||'')+'">'+esc(S[n])+'</textarea></label>'}
+
+function plab(c){
+  if(isSelf())return ['You (Life to be Assured & policy owner)','您本人（受保人及保单持有人）'];
+  if(isPren())return ['Expecting mother','准妈妈'];
+  return c==='A'?['Life A – Person to be insured (child / spouse)','Life A – 受保人（子女/配偶）']:['Life B – Proposer / policy owner (you)','Life B – 投保人/保单持有人（您）'];
+}
+function active(){var a=[['A']];if(isOther())a.push(['B']);return a.map(function(x){var l=plab(x[0]);return [x[0],l[0],l[1]]})}
+function pname(c){return {A:'Life A',B:'Life B'}[c]}
+function modeOpt(v,en,zh,sub){return '<label class="opt"><input type="radio" name="mode" data-n="mode" value="'+esc(v)+'"'+(S.mode===v?' checked':'')+'><span><b>'+esc(en)+'</b><small class="zh" style="font-size:13.5px">'+esc(zh)+'</small><small class="zh">'+esc(sub)+'</small></span></label>'}
+function modeOpts(){REG.push({n:'mode',l:'Application type'});
+  return modeOpt(M_SELF,'Buying for myself','为自己投保','Only your own details are needed. 只需填写您本人的资料。')+
+  modeOpt(M_PREN,'Prenatal – I am the expecting mother, buying for my unborn baby','产前投保 – 我是准妈妈，为腹中宝宝投保','We only collect the mother\'s details. 只收集妈妈的资料。')+
+  modeOpt(M_OTHER,'Buying for my child (17 and below) or my spouse','为子女（17岁及以下）或配偶投保','Details of the insured person and of you (the policy owner) are needed. 需填写受保人及您（保单持有人）的资料。')}
+function newForm(){if(confirm('Delete this form and start a new one? 删除此表格并开始新表格？')){try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_p')}catch(e){}location.reload()}}
+function prenCard(){
+  if(!isPren())return '';
+  var h='<div class="card"><span class="who2">Prenatal details 产前资料</span>';
+  h+=inp('A_edd','Baby\'s expected due date','宝宝预产期','date');
+  h+=rad('pren_prop','Who will be the proposer (policy owner)?','谁是投保人（保单持有人）？',['Mother (me)','Father'],1);
+  if(S.pren_prop==='Father')h+='<div class="note">Your advisor will collect the father\'s details separately. Only the mother\'s details are needed below. 顾问会另行收集爸爸的资料，以下只需填写妈妈的资料。</div>';
+  return h+'</div>';
+}
+function ageNext(dob){if(!dob)return '';var d=new Date(dob),n=new Date();if(isNaN(d))return '';var a=n.getFullYear()-d.getFullYear();var m=n.getMonth()-d.getMonth();if(m<0||(m===0&&n.getDate()<d.getDate()))a--;return a+1}
+function isChild2(){var d=new Date(S.A_dob);if(!S.A_dob||isNaN(d))return false;return (Date.now()-d)/31557600000<=2}
+
+function yn(id,en,zh,ps,ph){
+  var h='<div class="q"><div class="qt">'+L(en,zh)+'</div>';
+  ps.forEach(function(p){
+    var n='q_'+id+'_'+p, v=S[n], dn='d_'+id+'_'+p;
+    REG.push({n:n,l:(ps.length>1?pname(p)+' – ':'')+en});
+    REG.push({n:dn,l:'   Details',d:1});
+    h+='<div class="row">'+(ps.length>1?'<span class="who">'+pname(p)+'</span>':'')+'<div class="chips" style="margin:0">'+
+    ['Yes','No'].map(function(x){return '<label><input type="radio" name="'+n+'" data-n="'+n+'" data-yn="'+dn+'" value="'+x+'"'+(v===x?' checked':'')+'><span>'+(x==='Yes'?'Yes 是':'No 否')+'</span></label>'}).join('')+'</div></div>'+
+    '<textarea class="det" id="'+dn+'" data-n="'+dn+'" placeholder="'+esc(ph||'If Yes, please give full details 如回答“是”，请提供详情')+'"'+(v==='Yes'?'':' hidden')+'>'+esc(S[dn])+'</textarea>';
+  });
+  return h+'</div>';
+}
+
+/* ---------- person details ---------- */
+function person(p){
+  var c=p[0],h='<div class="card"><span class="who2">'+p[1]+'</span>';
+  if(c==='A'&&isPren()&&!S.A_sex)S.A_sex='Female';
+  h+=sec('Personal details – '+p[1],'个人资料 – '+p[2]);
+  h+=sel(c+'_title','Title','称谓',['Mr','Madam','Miss','Others']);
+  h+=inp(c+'_name','Full name (as shown on NRIC)','全名（与身份证相同）');
+  h+='<div class="grid">'+inp(c+'_nric','New NRIC No.','新身份证号码','text','e.g. 900101-14-1234')+inp(c+'_other_id','Birth Cert / Passport / ROC No.','出生证/护照/公司注册号')+'</div>';
+  h+=inp(c+'_ppexp','Passport expiry date (if applicable)','护照有效期（如适用）','date');
+  h+=inp(c+'_dob','Date of birth','出生日期','date');
+  S[c+'_age']=ageNext(S[c+'_dob']);REG.push({n:c+'_age',l:'Age next birthday'});
+  h+='<label class="f">'+L('Age next birthday','下一个生日年龄')+'<input id="age_'+c+'" readonly value="'+esc(S[c+'_age'])+'"></label>';
+  h+=rad(c+'_sex','Sex','性别',['Male','Female']);
+  h+=rad(c+'_nat','Nationality','国籍',['Malaysian','Others'],1);
+  if(S[c+'_nat']==='Others'){h+=inp(c+'_natc','State country','请注明国家');h+=rad(c+'_pr','Malaysian PR?','马来西亚永久居民？',['Yes','No'])}
+  h+=inp(c+'_cob','Country of birth','出生国家');
+  h+=rad(c+'_race','Race','种族',['Malay','Chinese','Indian','Others']);
+  h+=rad(c+'_rel','Religion','宗教',['Islam','Others']);
+  h+=rad(c+'_mar','Marital status','婚姻状况',['Single','Married','Divorced','Widowed']);
+  h+='<div class="grid">'+inp(c+'_kids','No. of children','子女人数','number')+'<span></span>'+inp(c+'_ht','Height (cm)','身高（厘米）','number')+inp(c+'_wt','Weight (kg)','体重（公斤）','number')+'</div>';
+  h+=inp(c+'_email','Email','电邮','email');
+  if(c==='A'&&isOther())h+=sel('A_relprop','Relationship with Proposer','与投保人的关系',['Child','Spouse','Employee','Ward','Others']);
+  h+=sec('Occupation / self-employed details','职业/自雇资料');
+  h+=inp(c+'_occ','Occupation','职业');
+  h+=inp(c+'_ind','Industry','行业');
+  h+=inp(c+'_work','Exact nature of work','具体工作性质');
+  h+=inp(c+'_bus','Nature of business','业务性质');
+  h+=txt(c+'_emp','Name & address of employer / business','雇主/公司名称及地址');
+  h+=chk(c+'_noinc','No income','没有收入',1);
+  if(!S[c+'_noinc'])h+=inp(c+'_inc','Annual earned income (RM)','年收入（令吉）','number');
+  h+=sec('Address & contact','地址与联络');
+  h+=inp(c+'_ra','Residential address','住家地址');
+  h+='<div class="grid">'+inp(c+'_rpc','Postcode','邮政编码')+inp(c+'_rtown','Town','城镇')+inp(c+'_rst','State','州属')+inp(c+'_rcty','Country','国家')+'</div>';
+  h+=chk(c+'_rco','Care-of (c/o) address','转交地址 (d/a)');
+  h+=chk(c+'_same','Mailing address is the same as residential','邮寄地址与住家地址相同',1);
+  if(!S[c+'_same']){h+=inp(c+'_ma','Mailing address','邮寄地址');h+='<div class="grid">'+inp(c+'_mpc','Postcode','邮政编码')+inp(c+'_mtown','Town','城镇')+inp(c+'_mst','State','州属')+inp(c+'_mcty','Country','国家')+'</div>';h+=chk(c+'_mco','Care-of (c/o) address','转交地址 (d/a)')}
+  h+='<div class="grid">'+inp(c+'_hp','Mobile no. (H/P)','手机号码','tel','+60 ...')+inp(c+'_th','Tel. (House)','住家电话','tel')+inp(c+'_to','Tel. (Office)','办公室电话','tel')+'</div>';
+  return h+'</div>';
+}
+
+/* ---------- steps ---------- */
+var STEPS=[
+ {t:'Start',f:function(){
+  return '<div class="card"><h2>Welcome 欢迎</h2><p>This form collects the information needed for your insurance application. It only takes a few minutes.<small class="zh">此表格用于收集您投保所需的资料，只需几分钟。</small></p>'+
+  '<div class="note">Please have your NRIC / passport ready. Your answers stay on this device until you choose to send them to your advisor.<small class="zh">请准备好身份证/护照。您的答案只会保存在此设备上，直到您选择发送给顾问。</small></div>'+
+  sec('What are you applying for?','您为谁投保？')+
+  modeOpts()+
+  '<p id="modemsg" class="small" style="color:#b3202a"></p>'+
+  '<p><button class="btn s" type="button" onclick="newForm()">Start a new form 开始新表格</button></p></div>'}},
+ {t:'Personal details',f:function(){return prenCard()+active().map(person).join('')}},
+ {t:'Source of funds',f:function(){
+  var opts=[['Employment related income e.g. salary, commission, bonus, EPF, pension','工作收入，如薪水、佣金、花红、公积金、退休金'],['Business income e.g. profits','生意收入，如盈利'],['Investment income e.g. shares, bonds, unit trust, rental','投资收入，如股票、债券、信托基金、租金'],['Policy claims, maturity or surrender','保单索赔、期满或退保'],['Savings or deposit','储蓄或存款'],['Others e.g. inheritance, gift, allowance, loan','其他，如遗产、礼物、津贴、贷款']];
+  var h='<div class="card"><h2>Source of fund & wealth 资金与财富来源</h2><p class="small">To be completed by the policy owner. You may choose more than one. 由保单持有人填写，可多选。</p>';
+  h+=sec('1. Source of funds used to pay the premium','1. 缴付保费的资金来源');
+  opts.forEach(function(o,i){h+=chk('sf_'+i,o[0],o[1])});
+  h+=sec('2. How did you accumulate your wealth (total assets)?','2. 您如何累积财富（总资产）？');
+  opts.forEach(function(o,i){h+=chk('sw_'+i,o[0],o[1])});
+  return h+txt('sf_other','Other details (if any)','其他说明（如有）')+'</div>'}},
+ {t:'Insurance applied for',f:function(){
+  var h='<div class="card"><h2>Life insurance applied for 投保详情</h2><div class="note">Your advisor will complete this part with you. 此部分由顾问与您一起填写。</div>';
+  h+=rad('mode','Mode of payment','缴费方式',['Single','Yearly','Half-yearly','Quarterly','Monthly']);
+  h+=rad('method','Method of payment','缴费途径',['Cash','Cheque','GIRO','Credit Card',"Banker's Order"]);
+  h+=rad('despatch','Policy despatch method','保单寄送方式',['Electronic','Hardcopy']);
+  h+=rad('dc','Credit any amount payable into my bank account (Direct Credit)?','是否将应付款项直接存入我的银行户口？',['Yes','No']);
+  return h+'</div>'}},
+ {t:'Existing insurance & lifestyle',f:function(){
+  var ps=active().map(function(p){return p[0]}),h='<div class="card"><h2>Existing insurance 现有保险</h2>';
+  h+=yn('ex1','Do you have any existing insurance, including those now proposed to other companies? (Life / Accident / Dread Disease / Disability / Medical / Health)','您是否有现有保险（包括正向其他公司申请的）？（人寿/意外/严重疾病/残障/医疗/健康）',ps,'Insurer, type, sum assured, year taken 保险公司、类别、保额、投保年份');
+  h+=yn('ex2','Has any proposal / reinstatement / renewal on your life (incl. other companies) ever been declined, postponed, rated, restricted or modified or subject to additional terms?','您的任何保险申请/复效/续保是否曾被拒绝、延迟、加费、受限制或附加条件？',ps);
+  h+=yn('ex3a','Is this proposal replacing or intended to replace any existing life policy with us or any other company?','此投保是否取代或打算取代任何现有人寿保单？',ps,'Which policy? 哪一份保单？');
+  h+=yn('ex3b','Have you surrendered or terminated any existing life policy in the last 12 months, now to be replaced with this new policy?','过去12个月内是否曾退保或终止现有人寿保单，并由此新保单取代？',ps);
+  h+=sec('Family history 家族病史','');
+  h+=yn('fam','Have any of your biological parents, brothers or sisters ever suffered from heart disease, stroke, hypertension, diabetes, kidney disease, mental disorders, cancer, hereditary, neurological or congenital disease?','您的亲生父母、兄弟姐妹是否曾患心脏病、中风、高血压、糖尿病、肾病、精神疾病、癌症、遗传、神经系统或先天性疾病？',ps,'Who, which condition, age at diagnosis 谁、什么疾病、确诊年龄');
+  h+=sec('Lifestyle 生活习惯','');
+  h+=yn('smoke','Have you smoked or used any tobacco / nicotine product (cigarettes, cigar, pipe, vape) in the last 12 months?','过去12个月内您是否吸烟或使用任何烟草/尼古丁产品？',ps,'Number of cigarettes/cigars per day 每天几支');
+  h+=yn('alc','Do you consume alcoholic drinks?','您是否饮酒？',ps,'Average weekly: beer/stout (small bottles), wine (glasses), whisky/brandy (pegs), social 每周平均：啤酒/黑啤（小瓶）、红酒（杯）、威士忌/白兰地（杯）、社交性');
+  return h+'</div>'}},
+ {t:'Health',f:function(){
+  var ps=active().map(function(p){return p[0]});
+  var fem=ps.filter(function(c){return S[c+'_sex']==='Female'&&!(S[c+'_age']&&S[c+'_age']<=14)});
+  var h='<div class="card"><h2>Health details 健康资料</h2><div class="note">Please answer honestly and completely. If Yes, give full details (condition, when, treatment, doctor/hospital, recovery). 请如实完整作答。如回答“是”，请提供详情（病况、时间、治疗、医生/医院、康复情况）。</div>';
+  h+=yn('h3','Are you currently receiving medical treatment and/or suffering from physical impairment, infirmity or congenital abnormality?','您目前是否正在接受治疗，或有身体残障、虚弱或先天异常？',ps);
+  h+=yn('h4','Have you ever taken (or now take) drugs or narcotics other than those validly prescribed by doctors, or been treated for drug habits?','您是否曾/正在服用非医生处方的药物或毒品，或曾接受戒毒治疗？',ps);
+  h+=sec('5. Have you ever had, been diagnosed with, investigated, treated for, or advised to seek medical/surgical treatment for…','5. 您是否曾患有、被诊断、检查、治疗或被建议接受治疗：');
+  var q5=[
+  ['a','Stroke, TIA, brain haemorrhage/injury, epilepsy, fits, paralysis, Parkinson\'s, Alzheimer\'s, multiple sclerosis, prolonged recurrent dizziness or headache, migraine, cerebral palsy, or other brain / nervous system disorder?','中风、短暂性脑缺血、脑出血/受伤、癫痫、抽搐、瘫痪、帕金森、阿尔茨海默、多发性硬化、长期反复头晕/头痛、偏头痛、脑瘫或其他脑/神经系统疾病？'],
+  ['b','Depression, anxiety, schizophrenia, suicide attempt, ADHD, autism, Down\'s syndrome, dementia, or any other mental health / psychiatric illness?','抑郁、焦虑、精神分裂、自杀企图、过动症、自闭症、唐氏综合症、痴呆或其他精神/心理疾病？'],
+  ['c','Asthma, bronchitis, tuberculosis (TB), pneumonia, coughing blood, or any other lung / respiratory disorder?','哮喘、支气管炎、肺结核、肺炎、咳血或其他肺部/呼吸系统疾病？'],
+  ['d','Chest pain, angina, palpitation, irregular heartbeat, coronary artery disease, heart attack, raised cholesterol, high or low blood pressure, heart valve disorder, enlarged heart, congenital heart defects/surgery, deep vein thrombosis, varicose veins, or other heart / vascular disorder?','胸痛、心绞痛、心悸、心律不齐、冠心病、心脏病发作、胆固醇高、高/低血压、心瓣膜疾病、心脏肥大、先天性心脏缺陷/手术、深静脉血栓、静脉曲张或其他心脏/血管疾病？'],
+  ['e','Diabetes, abnormal blood sugar, thyroid disease, goiter, thalassemia, anaemia, haemophilia, or other endocrine / blood / chromosomal / hereditary disorder?','糖尿病、血糖异常、甲状腺疾病、甲状腺肿、地中海贫血、贫血、血友病或其他内分泌/血液/染色体/遗传疾病？'],
+  ['f','Gastritis, gastric or duodenal ulcer, GERD, colitis, Crohn\'s disease, hernia, fistula, piles, blood in stool, vomiting blood, or other digestive disorder?','胃炎、胃/十二指肠溃疡、胃酸倒流、结肠炎、克罗恩病、疝气、瘘管、痔疮、便血、呕血或其他消化系统疾病？'],
+  ['g','Jaundice, Hepatitis B or C, gall bladder / biliary stone or obstruction, pancreatitis, or other liver / gall bladder / pancreas disorder?','黄疸、乙型/丙型肝炎、胆结石/胆管阻塞、胰腺炎或其他肝/胆/胰疾病？'],
+  ['h','Kidney or urinary stones, kidney infection, polycystic kidneys, protein or blood in urine, or any kidney / ureter / bladder / urethra / prostate / genital disorder?','肾/泌尿道结石、肾脏感染、多囊肾、尿蛋白或血尿，或肾、输尿管、膀胱、尿道、前列腺、生殖器官疾病？'],
+  ['i','Cancer, tumour, cyst, lump, growth, lymphoma, leukaemia, melanoma, Hodgkin\'s, bone marrow disorder, or any malignant / pre-malignant condition?','癌症、肿瘤、囊肿、肿块、增生、淋巴瘤、白血病、黑色素瘤、霍奇金病、骨髓疾病或任何恶性/癌前病变？'],
+  ['j','Blindness, cataract, glaucoma, impaired sight (excluding long/short sight), impaired hearing/speech, deafness, tonsillitis, deviated septum, chronic rhinitis, sinusitis, nose bleed, sleep apnoea, or other eye / ear / throat / mouth / nose disorder?','失明、白内障、青光眼、视力受损（不含近视/远视）、听力/言语受损、耳聋、扁桃体炎、鼻中隔弯曲、慢性鼻炎、鼻窦炎、流鼻血、睡眠窒息或其他眼/耳/喉/口/鼻疾病？'],
+  ['k','Backache, slipped disc, spondylosis, arthritis, rheumatoid arthritis, SLE, osteoporosis, gout, psoriasis, chronic skin disease, or other immune / connective tissue / spine / muscle / bone / joint disorder?','背痛、椎间盘突出、脊椎病、关节炎、类风湿、红斑狼疮、骨质疏松、痛风、牛皮癣、慢性皮肤病或其他免疫/结缔组织/脊椎/肌肉/骨骼/关节疾病？'],
+  ['l','Syphilis, gonorrhea, venereal disease, HPV infection, or any other sexually transmitted disease?','梅毒、淋病、性病、人类乳头瘤病毒(HPV)感染或其他性传播疾病？'],
+  ['m','Any other illness, disease, disability, accident, hospitalisation, surgery, observation or treatment (not routine) not mentioned above?','上述未提及的其他疾病、残障、意外、住院、手术、观察或非例行治疗？']];
+  q5.forEach(function(q){h+=yn('h5'+q[0],'5('+q[0]+') '+q[1],q[2],ps)});
+  h+=sec('6. HIV / AIDS and travel','6. 艾滋病及居住地');
+  h+=yn('h6a','(a) Have you or your spouse/partner ever been tested for, or received medical advice, counselling or treatment in connection with AIDS or HIV infection?','(a) 您或配偶/伴侣是否曾接受艾滋病/HIV 检测、医疗建议、辅导或治疗？',ps);
+  h+=yn('h6b','(b) Is there anything in your lifestyle that puts you at increased risk of AIDS or AIDS-related condition?','(b) 您的生活方式是否增加感染艾滋病或相关病况的风险？',ps);
+  h+=yn('h6c','(c) In the past 3 months, have you or your spouse/partner suffered for more than one continuous week from: fatigue, weight loss, diarrhoea, enlarged lymph nodes or unusual skin lesions?','(c) 过去3个月内，您或配偶/伴侣是否连续超过一周出现：疲倦、体重减轻、腹泻、淋巴结肿大或异常皮肤病变？',ps);
+  h+=yn('h6d','(d) Have you resided more than one continuous month outside Malaysia in the past 1 year, or intend to reside outside Malaysia (other than brief holidays) in the next 3 months?','(d) 过去一年内，您是否在马来西亚以外连续居住超过一个月，或未来3个月内打算在国外居住（短期度假除外）？',ps,'Country and purpose 国家及目的');
+  h+=sec('Other questions','其他问题');
+  h+=yn('h7','7. Have you engaged in or do you contemplate engaging in: aviation, parachuting, motor sports, diving, mountaineering, or any other dangerous sports?','7. 您是否曾参与或打算参与：航空、跳伞、赛车、潜水、登山或其他危险运动？',ps);
+  h+=yn('h8','8. In the past 5 years, have you had, been advised, or intend to undergo any investigation or screening test (blood/urine test, pap smear, mammogram, ultrasound, biopsy, X-ray, CT, MRI, ECG, treadmill ECG, echocardiogram, lung function, bone density, angiogram, scope, EEG, sleep study)?','8. 过去5年内，您是否曾接受、被建议或打算接受任何检查或筛查（验血/验尿、子宫颈抹片、乳房X光、超声波、活检、X光、CT、MRI、心电图、跑步机心电图、心脏超声波、肺功能、骨密度、血管造影、内视镜、脑电图、睡眠研究）？',ps,'What test, when, why, result 检查项目、时间、原因、结果');
+  if(fem.length){
+    h+=sec('9. For female only 仅限女性','');
+    h+=yn('h9a','(a) Are you currently pregnant? If Yes, state gestational age (weeks).','(a) 您目前是否怀孕？如是，请注明孕期（周）。',fem,'Gestational age: ___ weeks 孕期：___ 周');
+    h+=yn('h9b','(b) Any complications in current or previous pregnancy or childbirth (gestational diabetes, gestational hypertension, pre-eclampsia/eclampsia, ectopic pregnancy, stillbirth, miscarriage, DIC, placental abruption, amniotic fluid embolism, therapeutic abortion, caesarean due to medical condition, cervical insufficiency, fetal abnormalities, Rh disease, acute infections)?','(b) 目前或以往怀孕/分娩是否有并发症（妊娠糖尿病、妊娠高血压、子痫前症/子痫、宫外孕、死胎、流产、弥漫性血管内凝血、胎盘早剥、羊水栓塞、治疗性堕胎、因病情剖腹产、宫颈机能不全、胎儿异常、Rh 疾病、急性感染）？',fem);
+    h+=yn('h9c','(c) Ever been informed, investigated, treated or advised to seek treatment for breast lumps, fibroids, ovarian cysts, PCOS, endometriosis, cervicitis, abnormal pap smear, or any other breast / female organ disorder?','(c) 是否曾被告知、检查、治疗或被建议治疗：乳房肿块、子宫肌瘤、卵巢囊肿、多囊卵巢综合症、子宫内膜异位、宫颈炎、抹片异常或其他乳房/女性器官疾病？',fem);
+    if(isPren()){
+      h+=sec('Prenatal application only 仅限产前投保','');
+      h+=yn('h9d','(d) Are you carrying more than two foetuses?','(d) 您是否怀有两个以上胎儿？',['A']);
+      h+=yn('h9e','(e) Any artificial insemination and/or assisted reproductive technology (e.g. IVF) for this pregnancy?','(e) 此次怀孕是否曾进行人工授精/辅助生殖技术（如试管婴儿）？',['A']);
+      h+=yn('h9f','(f) Have any of your children suffered from Down\'s syndrome, leukaemia, severe epilepsy, haemophilia, spina bifida, cleft palate, anal atresia, congenital cataract/deafness/diaphragmatic hernia/heart disease, infantile hydrocephalus or other congenital defects?','(f) 您的孩子是否曾患唐氏综合症、白血病、严重癫痫、血友病、脊柱裂、腭裂、肛门闭锁、先天性白内障/耳聋/膈疝/心脏病、婴儿脑积水或其他先天缺陷？',['A']);
+    }
+  }
+  if(isChild2()){
+    h+=sec('10. For child (up to 2 years old) only 仅限2岁以下儿童','');
+    h+=yn('h10a','(a) Was the child born premature / less than 37 weeks gestation?','(a) 孩子是否早产/不足37周出生？',['A'],'Gestational period (weeks) and birth weight (kg) 孕周及出生体重');
+    h+=yn('h10b','(b) Has the child been investigated or treated for, or advised to seek treatment for: complications at birth or in first 30 days, prolonged neonatal jaundice needing hospitalisation, infection, breathing difficulty, G6PD deficiency, abnormal thyroid test, blood abnormalities, fits, congenital disorder/birth defects, developmental abnormalities, physical/mental impairment, hearing/eyesight/speech impairment?','(b) 孩子是否曾因以下情况被检查、治疗或被建议治疗：出生或首30天并发症、需住院的持续性新生儿黄疸、感染、呼吸困难、G6PD 缺乏、甲状腺检验异常、血液异常、抽搐、先天性疾病/缺陷、发育异常、身心障碍、听力/视力/言语障碍？',['A']);
+  }
+  return h+'</div>'}},
+ {t:'Other declarations',f:function(){
+  var ps=active().map(function(p){return p[0]});
+  var h='<div class="card"><h2>Other questions 其他问题</h2>';
+  h+=yn('bk','Are you presently a bankrupt?','您目前是否为破产人士？',ps);
+  h+=yn('bo','Are you (Proposer) the beneficial owner who ultimately owns and/or has effective control over the proposed assurance?','您（投保人）是否为最终拥有和/或有效控制此保险的受益所有人？',['*'],'If No – name of beneficial owner 如否，请填写受益所有人姓名');
+  h+='<div class="note small">If the answer is “No”, your advisor will provide a Questionnaire on Beneficial Owner and a Statutory Declaration. 如回答“否”，顾问会提供《受益所有人问卷》及《法定声明》。</div>';
+  h+='<p class="small">For any “Yes” answer to the health questions above, details are recorded in the boxes provided. 以上健康问题如回答“是”，详情已记录在相应方框中。</p>';
+  return h+'</div>'}},
+ {t:'FATCA',f:function(){
+  var h='<div class="card"><h2>FATCA – US tax status 美国税务身份</h2><p class="small">The US Foreign Account Tax Compliance Act (FATCA) requires financial institutions to obtain information on customers who are US persons. 美国《海外账户税收合规法案》(FATCA) 要求金融机构收集美国税务人士的资料。</p>';
+  active().forEach(function(p){h+=rad('fatca_'+p[0],p[1]+' – are you a US tax obligated person?',p[2]+' – 您是否为美国纳税义务人？',['Yes','No'])});
+  h+='<div class="note small">If Yes, the relevant US IRS documents are required. I agree to update the Company promptly of any change, and that the Company may disclose this information as required by law. 如是，须提供相关美国国税局文件。我同意如有变动会立即通知公司，并同意公司依法披露此资料。</div>';
+  h+=chk('fatca_ok','I have read and agree to the FATCA statement above','我已阅读并同意以上 FATCA 声明');
+  return h+'</div>'}},
+ {t:'Bank details',f:function(){
+  var h='<div class="card"><h2>Direct credit – bank details 直接入账银行资料</h2><p class="small">For crediting any amount payable under your policy. 用于存入保单相关的应付款项。</p>';
+  h+=inp('bk_name','Account holder name','户口持有人姓名');
+  h+=inp('bk_bank','Bank name','银行名称');
+  h+=inp('bk_no','Account number','户口号码','text','digits only 只填数字');
+  h+=rad('bk_type','Account type','户口类型',['Single','Joint'],1);
+  if(S.bk_type==='Joint'){h+=inp('bk_joint','Joint account holder name','联名户口持有人姓名')}
+  h+='<div class="note small">Your advisor will provide the Direct Credit Facility Form for you to complete. 顾问会提供《直接入账授权表格》供您填写。</div>';
+  return h+'</div>'}},
+ {t:'Sign & send',f:function(){
+  var h='<div class="card"><h2>Confirmation & e-signature 确认与电子签名</h2>';
+  h+=chk('c1','I confirm the answers above are true and complete to the best of my knowledge. I understand that non-disclosure or misrepresentation may affect my policy and claims.','我确认以上答案据我所知真实完整。我明白若未如实披露或有误导，可能影响我的保单及索赔。');
+  h+=chk('c2','I consent to my advisor collecting and using these personal details, including health information, to prepare my insurance application. I understand I will review and sign the official Great Eastern proposal form.','我同意顾问收集及使用这些个人资料（包括健康资料）以准备我的投保申请。我明白我将审阅并签署官方 Great Eastern 投保书。');
+  h+=sec('Signature(s) 签名','');
+  active().forEach(function(p){REG.push({n:'sig_'+p[0],l:'Signature – '+p[1],sig:1});
+    h+='<div style="margin-top:10px"><b style="font-size:14px">'+L(p[1],p[2])+'</b><canvas class="sigbox" data-sig="'+p[0]+'"></canvas><div class="row"><button class="btn s" data-clear="'+p[0]+'" type="button">Clear 清除</button><span class="small">Sign with finger / Apple Pencil 用手指或 Apple Pencil 签名</span></div></div>'});
+  S.signdate=new Date().toLocaleDateString('en-GB');REG.push({n:'signdate',l:'Date signed'});
+  h+='<p class="small" style="margin-top:12px">Date 日期: <b>'+S.signdate+'</b></p>';
+  h+='<div class="row" style="margin-top:14px"><button class="btn p" id="send" type="button" style="flex:1">Send to my advisor 发送给顾问</button></div>';
+  h+='<div class="row"><button class="btn s" id="dl" type="button" style="flex:1">Download a copy 下载副本</button></div>';
+  if(ADVISOR_WA)h+='<div class="row"><a class="btn s" style="flex:1;text-align:center;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/'+ADVISOR_WA+'?text='+encodeURIComponent('Hi Shen, I have completed the client information form. Sending the file now.')+'">Open WhatsApp chat with advisor 打开顾问 WhatsApp</a></div><p class="small">Step 1: tap Download. Step 2: open the chat above and attach the saved file. 先下载文件，再打开对话并附上该文件。</p>';
+  h+='<p class="small" id="msg"></p>';
+  h+='<hr style="border:0;border-top:1px solid #d9e0e8;margin:14px 0"><div class="row"><button class="btn s" type="button" style="flex:1" onclick="newForm()">Start a new form 开始新表格<small class="zh" style="color:inherit">This form will be deleted 此表格将被删除</small></button></div></div>';
+  return h}}
+];
+
+/* ---------- render ---------- */
+var cur=0,app=document.getElementById('app');
+try{var c0=parseInt(localStorage.getItem(KEY+'_p'));if(c0>=0&&c0<STEPS.length)cur=c0}catch(e){}
+function render(keepScroll){
+  var y=window.scrollY;REG=[];
+  app.innerHTML=(cur>0&&cur<STEPS.length?'<p class="small" style="margin:0 2px 8px">Step '+(cur+1)+' of '+STEPS.length+' · '+STEPS[cur].t+'</p>':'')+STEPS[cur].f();
+  document.getElementById('prog').style.width=((cur+1)/STEPS.length*100)+'%';
+  document.getElementById('back').style.visibility=cur?'visible':'hidden';
+  document.getElementById('next').style.display=cur===STEPS.length-1?'none':'';
+  try{localStorage.setItem(KEY+'_p',cur)}catch(e){}
+  setupSig();
+  window.scrollTo(0,keepScroll?y:0);
+}
+document.getElementById('next').onclick=function(){if(cur===0&&!S.mode){var m=document.getElementById('modemsg');if(m)m.textContent='Please choose one option to continue. 请先选择一项。';return}cur=Math.min(STEPS.length-1,cur+1);render()};
+document.getElementById('back').onclick=function(){cur=Math.max(0,cur-1);render()};
+
+function onChange(e){
+  var el=e.target,n=el.dataset&&el.dataset.n;if(!n)return;
+  if(el.type==='checkbox')S[n]=el.checked;else if(el.type==='radio'){if(!el.checked)return;S[n]=el.value}else S[n]=el.value;
+  if(el.dataset.yn){var d=document.getElementById(el.dataset.yn);if(d)d.hidden=el.value!=='Yes'}
+  var m=n.match(/^([ABC])_dob$/);
+  if(m){S[m[1]+'_age']=ageNext(S[n]);var a=document.getElementById('age_'+m[1]);if(a)a.value=S[m[1]+'_age']}
+  save();
+  if(n==='mode'){var mm=document.getElementById('modemsg');if(mm)mm.textContent=''}
+  if(el.dataset.rr&&(e.type==='change'||el.type==='radio'))render(true);
+}
+document.addEventListener('input',onChange);document.addEventListener('change',onChange);
+
+/* ---------- signature ---------- */
+function setupSig(){
+  document.querySelectorAll('canvas[data-sig]').forEach(function(cv){
+    var c=cv.dataset.sig,r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+    cv.width=r.width*dpr;cv.height=r.height*dpr;
+    var g=cv.getContext('2d');g.scale(dpr,dpr);g.lineWidth=2.2;g.lineCap='round';g.lineJoin='round';g.strokeStyle='#111';
+    if(S['sig_'+c]){var im=new Image();im.onload=function(){g.drawImage(im,0,0,r.width,r.height)};im.src=S['sig_'+c]}
+    var down=false,last;
+    function pt(e){var b=cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top]}
+    cv.addEventListener('pointerdown',function(e){down=true;last=pt(e);cv.setPointerCapture(e.pointerId);g.beginPath();g.arc(last[0],last[1],1,0,6.3);g.fill();e.preventDefault()});
+    cv.addEventListener('pointermove',function(e){if(!down)return;var p=pt(e);g.beginPath();g.moveTo(last[0],last[1]);g.lineTo(p[0],p[1]);g.stroke();last=p;e.preventDefault()});
+    function up(){if(!down)return;down=false;try{S['sig_'+c]=cv.toDataURL('image/png');save()}catch(e){}}
+    cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  });
+  document.querySelectorAll('[data-clear]').forEach(function(b){b.onclick=function(){var c=b.dataset.clear;delete S['sig_'+c];save();render(true)}});
+  var s=document.getElementById('send'),d=document.getElementById('dl');
+  if(s)s.onclick=function(){finish(true)};if(d)d.onclick=function(){finish(false)};
+}
+
+/* ---------- report ---------- */
+function buildReport(){
+  REG=[];STEPS.forEach(function(s){s.f()});
+  var rows='',nm=S.A_name||'Client';
+  REG.forEach(function(r){
+    if(r.h){rows+='<tr class="h"><td colspan="2">'+esc(r.h)+'</td></tr>';return}
+    var v=S[r.n];
+    if(r.sig){rows+='<tr><td>'+esc(r.l)+'</td><td>'+(v?'<img src="'+v+'" style="max-width:260px;border-bottom:1px solid #000">':'<i>not signed</i>')+'</td></tr>';return}
+    if(r.c){v=v?'Yes':'';if(!v)return}
+    if(r.d&&!v)return;
+    if(v===undefined||v===''||v===null){if(r.d)return;v='—'}
+    rows+='<tr><td>'+esc(r.l)+'</td><td>'+esc(v)+'</td></tr>';
+  });
+  return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Client Information – '+esc(nm)+'</title><style>body{font:14px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;margin:20px;color:#111}h1{font-size:18px}table{border-collapse:collapse;width:100%}td{border:1px solid #ccc;padding:6px 8px;vertical-align:top}td:first-child{width:46%;background:#fafafa}tr.h td{background:#b3202a;color:#fff;font-weight:700}</style></head><body><h1>Client Information Form – '+esc(nm)+'</h1><p>Prepared for: Hiew Tieng Shen 丘廷升, Life Insurance Advisor · Submitted: '+new Date().toLocaleString('en-GB')+'<br>This is an information worksheet, not the official proposal form.</p><table>'+rows+'</table></body></html>';
+}
+function finish(share){
+  var msg=document.getElementById('msg');
+  if(!S.c1||!S.c2){msg.textContent='Please tick both confirmations first. 请先勾选两项确认。';return}
+  var act=active().filter(function(p){return !S['sig_'+p[0]]});
+  if(act.length){msg.textContent='Please sign for: '+act.map(function(p){return p[1]}).join(', ')+' 请签名';return}
+  var html=buildReport(),fn='Client-Info-'+(S.A_name||'form').replace(/[^A-Za-z0-9]+/g,'-')+'.html';
+  var file=new File([html],fn,{type:'text/html'});
+  if(share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:'Client Information Form',text:'Completed client information form'}).then(function(){thanks(true)}).catch(function(e){if(e&&e.name!=='AbortError')dl()});
+  }else dl();
+  function dl(){var a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){thanks(false)},800)}
+}
+function thanks(shared){
+  try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_p')}catch(e){}
+  S={};cur=0;
+  document.querySelector('.nav').style.display='none';
+  document.getElementById('prog').style.width='100%';
+  app.innerHTML='<div class="card" style="text-align:center"><h2 class="ok">Thank you! 谢谢！</h2>'+
+  (shared?'<p>Your form has been shared. 您的表格已分享。</p>':'<p>Your form has been saved on this device. 您的表格已保存在此设备。<br><b>Please send the saved file to your advisor on WhatsApp.</b><small class="zh">请通过 WhatsApp 把已保存的文件发给您的顾问。</small></p>')+
+  '<p class="small">Your answers have been cleared from this page for your privacy. You may now close this page. 为保护隐私，页面上的答案已清除。您现在可以关闭此页面。</p>'+
+  (ADVISOR_WA?'<p><a class="btn p" style="display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/'+ADVISOR_WA+'?text='+encodeURIComponent('Hi Shen, I have completed the client information form.')+'">Open WhatsApp chat 打开 WhatsApp</a></p>':'')+
+  '<p><button class="btn s" type="button" onclick="location.reload()">Start a new form 开始新表格</button></p></div>';
+  window.scrollTo(0,0);
+}
+render();
+</script>
+</body>
+</html>
