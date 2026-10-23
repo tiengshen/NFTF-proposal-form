@@ -142,7 +142,8 @@ var STEPS=[
   sec('Who is involved?','涉及哪些人？')+
   chk('hasB','The Proposer (policy owner) is a different person from the Life to be Assured','投保人（保单持有人）与受保人不是同一人',1)+
   chk('hasC','Add Mother/Spouse of Proposer (usually for a child\'s policy)','增加投保人的母亲/配偶（通常用于儿童保单）',1)+
-  '<p class="small">Yes/No answers in this form apply to everyone listed. 表格中的“是/否”答案适用于所有列出的人。</p></div>'}},
+  '<p class="small">Yes/No answers in this form apply to everyone listed. 表格中的“是/否”答案适用于所有列出的人。</p>'+
+  '<p><button class="btn s" type="button" onclick="if(confirm(\'Clear all answers and start a new form? 清除所有答案并开始新表格？\')){try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+\'_p\')}catch(e){}location.reload()}">Start a new form 开始新表格</button></p></div>'}},
  {t:'Personal details',f:function(){return active().map(person).join('')}},
  {t:'Source of funds',f:function(){
   var opts=[['Employment related income e.g. salary, commission, bonus, EPF, pension','工作收入，如薪水、佣金、花红、公积金、退休金'],['Business income e.g. profits','生意收入，如盈利'],['Investment income e.g. shares, bonds, unit trust, rental','投资收入，如股票、债券、信托基金、租金'],['Policy claims, maturity or surrender','保单索赔、期满或退保'],['Savings or deposit','储蓄或存款'],['Others e.g. inheritance, gift, allowance, loan','其他，如遗产、礼物、津贴、贷款']];
@@ -328,9 +329,21 @@ function finish(share){
   var html=buildReport(),fn='Client-Info-'+(S.A_name||'form').replace(/[^A-Za-z0-9]+/g,'-')+'.html';
   var file=new File([html],fn,{type:'text/html'});
   if(share&&navigator.canShare&&navigator.canShare({files:[file]})){
-    navigator.share({files:[file],title:'Client Information Form',text:'Completed client information form'}).then(function(){msg.innerHTML='<span class="ok">Shared ✓ 已分享</span>'}).catch(function(e){if(e&&e.name!=='AbortError')dl()});
+    navigator.share({files:[file],title:'Client Information Form',text:'Completed client information form'}).then(function(){thanks(true)}).catch(function(e){if(e&&e.name!=='AbortError')dl()});
   }else dl();
-  function dl(){var a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=fn;document.body.appendChild(a);a.click();a.remove();msg.innerHTML='<span class="ok">File saved ✓ 已保存。</span> Please send this file to your advisor on WhatsApp. 请通过 WhatsApp 把此文件发给您的顾问。'}
+  function dl(){var a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){thanks(false)},800)}
+}
+function thanks(shared){
+  try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+'_p')}catch(e){}
+  S={};cur=0;
+  document.querySelector('.nav').style.display='none';
+  document.getElementById('prog').style.width='100%';
+  app.innerHTML='<div class="card" style="text-align:center"><h2 class="ok">Thank you! 谢谢！</h2>'+
+  (shared?'<p>Your form has been shared. 您的表格已分享。</p>':'<p>Your form has been saved on this device. 您的表格已保存在此设备。<br><b>Please send the saved file to your advisor on WhatsApp.</b><small class="zh">请通过 WhatsApp 把已保存的文件发给您的顾问。</small></p>')+
+  '<p class="small">Your answers have been cleared from this page for your privacy. You may now close this page. 为保护隐私，页面上的答案已清除。您现在可以关闭此页面。</p>'+
+  (ADVISOR_WA?'<p><a class="btn p" style="display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/'+ADVISOR_WA+'?text='+encodeURIComponent('Hi Shen, I have completed the client information form.')+'">Open WhatsApp chat 打开 WhatsApp</a></p>':'')+
+  '</div>';
+  window.scrollTo(0,0);
 }
 render();
 </script>
